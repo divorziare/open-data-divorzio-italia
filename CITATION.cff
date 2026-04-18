@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this dataset in a published work, please cite as follows."
+title: "Open Data — Divorzio in Italia"
+abstract: >-
+  Tidy, CSV-formatted extracts of ISTAT official statistics on divorce in
+  Italy: age at divorce (husband, wife, both spouses), marriage duration,
+  separation proceedings, children involved in judicial divorces, and
+  which spouse filed the petition.
+authors:
+  - name: "Legalium S.r.l."
+    website: "https://www.divorziare.it"
+repository-code: "https://github.com/divorziare/open-data-divorzio-italia"
+url: "https://www.divorziare.it"
+license: CC-BY-4.0
+keywords:
+  - italy
+  - divorce
+  - family law
+  - istat
+  - open data
+  - statistics
+  - data journalism
+references:
+  - type: database
+    title: "I.Stat — il datawarehouse dell'Istat"
+    url: "https://esploradati.istat.it"
+    authors:
+      - name: "ISTAT — Istituto Nazionale di Statistica"

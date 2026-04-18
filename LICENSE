@@ -1,0 +1,26 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+The datasets in the `data/` directory of this repository are derived from
+official statistics published by ISTAT (Istituto Nazionale di Statistica)
+and are made available under the terms of the Creative Commons Attribution
+4.0 International License. ISTAT data is released under the same licence
+(see https://www.istat.it/it/note-legali).
+
+You are free to:
+  - Share: copy and redistribute the material in any medium or format
+  - Adapt: remix, transform, and build upon the material for any purpose,
+    even commercially
+
+Under the following terms:
+  - Attribution: You must give appropriate credit, provide a link to the
+    licence, and indicate if changes were made. You may do so in any
+    reasonable manner, but not in any way that suggests the licensor
+    endorses you or your use.
+
+Required attribution:
+  "Source: ISTAT, via divorziare.it / open-data-divorzio-italia
+   (https://github.com/divorziare/open-data-divorzio-italia).
+   Licensed under CC BY 4.0."
+
+The full legal text of the licence is available at:
+https://creativecommons.org/licenses/by/4.0/legalcode
