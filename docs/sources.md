@@ -8,14 +8,29 @@ ogni CSV.
 
 ## Mappa CSV → dataflow ISTAT
 
-| CSV | Dataflow(s) | Copertura | Unità di misura |
+| CSV | Dataflow(s) | Copertura temporale | Granularità territoriale |
 |---|---|---|---|
-| `eta-al-divorzio-coniugi.csv` | `27_385_DF_DCIS_DIVORDEMCONG_4` · `27_470_DF_DCIS_DIVORDEMCONG1_4` | 2008-oggi | Divorzi concessi |
-| `eta-al-divorzio-marito.csv` | `27_385_DF_DCIS_DIVORDEMCONG_5` · `27_470_DF_DCIS_DIVORDEMCONG1_5` | 2008-oggi | Divorzi concessi |
-| `eta-al-divorzio-moglie.csv` | `27_385_DF_DCIS_DIVORDEMCONG_6` · `27_470_DF_DCIS_DIVORDEMCONG1_6` | 2008-oggi | Divorzi concessi |
-| `eta-e-durata-del-divorzio.csv` | `24_447_DF_DCIS_SPOSI_3` | 2015-oggi | Sposi/spose divorziati/e al matrimonio |
-| `coniuge-che-ha-presentato-la-domanda-di-divorzio-con-rito-giudiziale.csv` | `27_814_DF_DCIS_DIVFIG_10` · `27_945_DF_DCIS_DIVFIG1_8` | 2008-oggi | Procedimenti giudiziali |
-| `procedimenti-e-separazioni.csv` | `27_349_DF_DCIS_SEPARAZIND_1` · `27_474_DF_DCIS_SEPARAZIND1_1` | 2007-oggi | Procedimenti / durata media |
+| `eta-al-divorzio-coniugi.csv` | `27_385_DF_DCIS_DIVORDEMCONG_4` · `27_470_DF_DCIS_DIVORDEMCONG1_4` | 2008-oggi | Italia, 5 macroregioni, 22 regioni + 2 PA |
+| `eta-al-divorzio-marito.csv` | `27_385_DF_DCIS_DIVORDEMCONG_5` · `27_470_DF_DCIS_DIVORDEMCONG1_5` | 2008-oggi | Italia, 5 macroregioni, 22 regioni + 2 PA |
+| `eta-al-divorzio-moglie.csv` | `27_385_DF_DCIS_DIVORDEMCONG_6` · `27_470_DF_DCIS_DIVORDEMCONG1_6` | 2008-oggi | Italia, 5 macroregioni, 22 regioni + 2 PA |
+| `eta-e-durata-del-divorzio.csv` | `24_447_DF_DCIS_SPOSI_3` | 2015-oggi | Italia (solo totale nazionale) |
+| `coniuge-che-ha-presentato-la-domanda-di-divorzio-con-rito-giudiziale.csv` | `27_814_DF_DCIS_DIVFIG_10` · `27_945_DF_DCIS_DIVFIG1_8` | 2008-oggi | Italia, 5 macroregioni, 22 regioni + 2 PA |
+| `procedimenti-e-separazioni.csv` | `27_349_DF_DCIS_SEPARAZIND_1` · `27_474_DF_DCIS_SEPARAZIND1_1` | 2007-oggi | Italia, 5 macroregioni, 22 regioni + 2 PA |
+
+### Indicatori per file
+
+- **File età al divorzio** (`marito`, `moglie`, `coniugi`): l'indicatore
+  può essere `divorzi concessi` (totale), `divorzi concessi dal
+  tribunale` (giudiziali), `divorzi consensuali extragiudiziali`.
+  Gli ultimi due sommano al primo.
+- **`procedimenti-e-separazioni.csv`**: 9 indicatori distinti sulla
+  separazione (durata media, tassi, percentuali di rito consensuale).
+- **`eta-e-durata-del-divorzio.csv`**: `sposi` e `spose` — conteggio
+  di uomini e donne divorziati/e al momento di un successivo matrimonio,
+  disaggregati per età al matrimonio precedente, anno di cessazione e
+  durata.
+- **`coniuge-che-ha-presentato-la-domanda-*.csv`**: `divorzi concessi`
+  (totale), `divorzi concessi dal tribunale`.
 
 ## Perché alcuni temi compaiono in due dataflow
 

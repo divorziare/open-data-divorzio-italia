@@ -35,59 +35,118 @@ Tutti i CSV hanno la stessa struttura di base:
   serie storiche legacy da serie correnti — vedi
   [`docs/sources.md`](docs/sources.md)).
 
+### Due avvisi critici sui filtri
+
+1. **`Territorio` non è sempre `Italia`**. I dataset includono 5
+   macroregioni (Nord-ovest, Nord-est, Centro, Sud, Isole) e 22 regioni
+   + 2 province autonome. Per il totale nazionale filtra sempre
+   `Territorio == 'Italia'`, altrimenti stai sommando Italia + ogni
+   regione e stai gonfiando il totale di ~3x.
+
+2. **`Indicatore` è spesso decomposto**. Per i divorzi i valori sono:
+   `divorzi concessi` (il totale), `divorzi concessi dal tribunale`
+   (giudiziali), `divorzi consensuali extragiudiziali`. Gli ultimi due
+   sommano al primo. Per la serie "totale" filtra sempre
+   `Indicatore == 'divorzi concessi'`, altrimenti raddoppi.
+
+La combinazione dei due sbagli produce sovrastime fino a **6x** il valore
+reale. Esempi corretti qui sotto.
+
 ## Quick start
 
-### Python (stdlib)
-
-```python
-import csv
-from pathlib import Path
-
-path = Path('data/csv/eta-al-divorzio-marito.csv')
-with path.open(encoding='utf-8') as fh:
-    reader = csv.DictReader(fh)
-    for row in reader:
-        if row['TIME_PERIOD'] == '2022' and row['Classe di età del marito al divorzio'] == '45-49 anni':
-            print(row['VALUE'])
-```
-
-### Python (pandas)
+### Totale divorzi in Italia, anno per anno (pandas)
 
 ```python
 import pandas as pd
 
 df = pd.read_csv('data/csv/eta-al-divorzio-marito.csv')
-df['TIME_PERIOD'] = df['TIME_PERIOD'].astype(int)
 
-# Solo la serie corrente (metodologia post-2017)
-df_curr = df[df['SOURCE'] == '27_470_DF_DCIS_DIVORDEMCONG1_5']
+# Riga "grand total" per anno: Italia + totale di ogni dimensione.
+mask = (
+    (df['Territorio'] == 'Italia') &
+    (df['Indicatore'] == 'divorzi concessi') &
+    (df['Luogo di nascita del marito'] == 'Totale') &
+    (df['Luogo di nascita della moglie'] == 'Totale') &
+    (df['Luogo di residenza del marito'] == 'Totale') &
+    (df['Luogo di residenza della moglie'] == 'Totale') &
+    (df['Classe di età del marito al divorzio'] == '15 anni e più') &
+    (df['Classe di età della moglie al divorzio'] == '15 anni e più') &
+    (df['Classe di età del marito al matrimonio'] == '15 anni e più') &
+    (df['Classe di età della moglie al matrimonio'] == '15 anni e più') &
+    (df['Anno di matrimonio'] == 'tutte le voci')
+)
+serie = df[mask].sort_values('TIME_PERIOD').set_index('TIME_PERIOD')['VALUE']
+print(serie)
+# 2008    54351
+# 2009    54456
+# ...
+# 2022    82596
+```
 
-# Divorzi totali per anno
-totali = df_curr[df_curr['Classe di età del marito al divorzio'] == '15 anni e più']\
-    .groupby('TIME_PERIOD')['VALUE'].sum()
-print(totali)
+### Distribuzione per regione (2022)
+
+```python
+df_2022 = df[
+    (df['TIME_PERIOD'] == 2022) &
+    (df['Indicatore'] == 'divorzi concessi') &
+    (df['Territorio'] != 'Italia') &
+    (~df['Territorio'].isin(['Nord-ovest', 'Nord-est', 'Centro', 'Sud', 'Isole'])) &
+    (df['Luogo di nascita del marito'] == 'Totale') &
+    (df['Luogo di nascita della moglie'] == 'Totale') &
+    (df['Luogo di residenza del marito'] == 'Totale') &
+    (df['Luogo di residenza della moglie'] == 'Totale') &
+    (df['Classe di età del marito al divorzio'] == '15 anni e più') &
+    (df['Classe di età della moglie al divorzio'] == '15 anni e più') &
+    (df['Classe di età del marito al matrimonio'] == '15 anni e più') &
+    (df['Classe di età della moglie al matrimonio'] == '15 anni e più') &
+    (df['Anno di matrimonio'] == 'tutte le voci')
+]
+print(df_2022[['Territorio', 'VALUE']].sort_values('VALUE', ascending=False))
+```
+
+### Durata media procedimento di separazione (stdlib, no pandas)
+
+```python
+import csv
+from pathlib import Path
+
+with Path('data/csv/procedimenti-e-separazioni.csv').open(encoding='utf-8') as fh:
+    rows = list(csv.DictReader(fh))
+
+durata_giudiziale = {
+    int(r['TIME_PERIOD']): int(r['VALUE'])
+    for r in rows
+    if r['Territorio'] == 'Italia'
+    and r['Indicatore'] == 'durata media del procedimento di separazione giudiziale (in giorni)'
+    and r['VALUE']
+}
+for anno, giorni in sorted(durata_giudiziale.items()):
+    print(f'{anno}: {giorni} giorni')
 ```
 
 ### R
 
 ```r
-df <- read.csv("data/csv/eta-al-divorzio-marito.csv", encoding = "UTF-8")
-head(df)
+df <- read.csv("data/csv/procedimenti-e-separazioni.csv", fileEncoding = "UTF-8")
+italia_giud <- subset(df,
+  Territorio == "Italia" &
+  Indicatore == "durata media del procedimento di separazione giudiziale (in giorni)")
+plot(italia_giud$TIME_PERIOD, italia_giud$VALUE, type = "l",
+     xlab = "Anno", ylab = "Giorni")
 ```
 
-### CLI
+### CLI (csvkit)
 
 ```bash
-# Quanti divorzi totali nel 2022, serie corrente?
-csvgrep -c 'SOURCE' -m '27_470_DF_DCIS_DIVORDEMCONG1_5' \
-        data/csv/eta-al-divorzio-marito.csv \
-  | csvgrep -c 'TIME_PERIOD' -m '2022' \
-  | csvgrep -c 'Classe di età del marito al divorzio' -m '15 anni e più' \
-  | csvstat -c 'VALUE' --sum
+# Durata media procedimento giudiziale Italia, ogni anno
+csvgrep -c 'Territorio' -m 'Italia' data/csv/procedimenti-e-separazioni.csv \
+  | csvgrep -c 'Indicatore' -r 'giudiziale' \
+  | csvcut -c 'TIME_PERIOD,VALUE'
 ```
 
-Vedi anche [`notebooks/esempio-analisi.ipynb`](notebooks/esempio-analisi.ipynb)
-per esempi più ampi.
+Installa csvkit con `pip install csvkit`. Vedi anche
+[`notebooks/esempio-analisi.ipynb`](notebooks/esempio-analisi.ipynb) per
+esempi più ampi.
 
 ## Rigenerare i CSV dai JSON originali
 

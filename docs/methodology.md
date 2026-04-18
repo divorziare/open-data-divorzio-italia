@@ -62,6 +62,25 @@ python3 scripts/istat_sdmx_to_csv.py
 
 Lo script richiede solo la libreria standard Python 3.9+.
 
+## Aggregazioni e livelli
+
+I CSV sono **cubi multi-dimensionali serializzati**: ogni riga è una
+combinazione specifica di valori delle dimensioni. Questo significa che
+la stessa cifra compare a più livelli di aggregazione. Due punti critici
+per l'analista:
+
+- **`Territorio`** contiene Italia, 5 macroregioni (Nord-ovest, Nord-est,
+  Centro, Sud, Isole) e 22 regioni + 2 province autonome. Sommare tutti
+  i valori conta lo stesso divorzio 3 volte (Italia + macroregione +
+  regione). Per il totale nazionale filtra `Territorio == 'Italia'`.
+- **`Indicatore`** per i divorzi include `divorzi concessi` (il totale),
+  `divorzi concessi dal tribunale` (giudiziali) e
+  `divorzi consensuali extragiudiziali`. Gli ultimi due sommano al
+  primo. Per il totale filtra `Indicatore == 'divorzi concessi'`.
+- Le altre dimensioni hanno un livello di totale (`Totale`,
+  `tutte le voci`, o `15 anni e più` per le classi d'età) che va scelto
+  esplicitamente quando si vuole solo la riga aggregata.
+
 ## Limiti conosciuti
 
 - **Rotture metodologiche**: ISTAT ha ridefinito diverse serie nel
@@ -72,6 +91,6 @@ Lo script richiede solo la libreria standard Python 3.9+.
 - **Aggiornamento manuale**: i file in `data/raw/` sono scaricati a mano
   dall'interfaccia I.Stat. Un futuro script di update automatico è
   pianificato (vedi `CHANGELOG.md`).
-- **Copertura territoriale**: i dataflow presenti coprono il totale
-  nazionale. La disaggregazione regionale è disponibile su I.Stat ma non
-  ancora inclusa qui.
+- **Granularità provinciale**: i dataflow inclusi arrivano al livello
+  regionale. Per dati a livello provinciale/comunale è necessario
+  consultare direttamente I.Stat o le tavole specifiche ISTAT.
