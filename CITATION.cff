@@ -3,9 +3,12 @@ message: "If you use this dataset in a published work, please cite as follows."
 title: "Open Data — Divorzio in Italia"
 abstract: >-
   Tidy, CSV-formatted extracts of ISTAT official statistics on divorce in
-  Italy: age at divorce (husband, wife, both spouses), marriage duration,
-  separation proceedings, children involved in judicial divorces, and
-  which spouse filed the petition.
+  Italy: age at divorce (husband, wife, both spouses), which spouse filed
+  the petition in judicial divorces, separations (counts, rates and length
+  of proceedings), and remarriages of divorced people by time elapsed
+  since the end of the previous marriage.
+version: "0.2.0"
+date-released: "2026-10-26"
 authors:
   - name: "Legalium S.r.l."
     website: "https://www.divorziare.it"

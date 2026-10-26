@@ -1,0 +1,24 @@
+name: Validate data
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Regenerate CSVs from data/raw
+        run: python3 scripts/istat_sdmx_to_csv.py
+
+      - name: Committed CSVs must match the regenerated ones
+        run: git diff --exit-code --stat -- data/csv
+
+      - name: Sanity checks
+        run: python3 scripts/validate.py

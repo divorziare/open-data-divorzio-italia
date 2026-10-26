@@ -11,9 +11,11 @@ tidy CSV rows with human-readable dimension labels.
 Usage:
     python3 scripts/istat_sdmx_to_csv.py
 
-Reads every `*.json` in `data/raw/` and writes one `.csv` per input in
+Reads every `*.json` in `data/raw/` and writes one `.csv` per dataset name in
 `data/csv/`. Column order is: all series dimensions (by name), TIME_PERIOD,
-VALUE, OBS_STATUS.
+VALUE, OBS_STATUS, SOURCE. The territory dimension is followed by two derived
+columns, `Codice territorio` (the ISTAT area code) and `Livello territoriale`
+(nazionale, ripartizione, regione, provincia autonoma).
 
 Requires only Python 3.9+ stdlib.
 """
@@ -49,18 +51,42 @@ def build_index_maps(structure: dict[str, Any]) -> tuple[list[dict], list[dict]]
     return series_dims, obs_dims
 
 
-def obs_status_label(code: str | None, attrs_spec: list[dict]) -> str:
-    """Resolve the OBS_STATUS attribute code to its human label."""
-    if code is None or not attrs_spec:
-        return ""
-    for a in attrs_spec:
-        if a.get("id") == "OBS_STATUS":
-            try:
-                idx = int(code)
-                return a["values"][idx].get("name", "")
-            except (ValueError, IndexError, KeyError):
-                return ""
+def obs_status_label(obs_value: list, attrs_spec: list[dict]) -> str:
+    """Resolve the OBS_STATUS attribute of one observation to its human label.
+
+    An observation is `[value, attr_0, attr_1, ...]`, where `attr_i` indexes the
+    values of the i-th entry of `structure.attributes.observation`.
+    """
+    for pos, a in enumerate(attrs_spec):
+        if a.get("id") != "OBS_STATUS":
+            continue
+        if len(obs_value) <= pos + 1 or obs_value[pos + 1] is None:
+            return ""
+        try:
+            return a["values"][int(obs_value[pos + 1])].get("name", "")
+        except (ValueError, IndexError, KeyError):
+            return ""
     return ""
+
+
+TERRITORY_DIM = "REF_AREA"
+TERRITORY_EXTRA_COLUMNS = ["Codice territorio", "Livello territoriale"]
+# Bolzano/Bozen and Trento: together they make up Trentino-Alto Adige (ITDA),
+# so they must never be summed with it.
+AUTONOMOUS_PROVINCES = {"ITD1", "ITD2"}
+
+
+def territory_level(code: str) -> str:
+    """Classify an ISTAT REF_AREA code (NUTS 2006-based: ITD = Nord-est, ITE = Centro)."""
+    if code == "IT":
+        return "nazionale"
+    if code in AUTONOMOUS_PROVINCES:
+        return "provincia autonoma"
+    if re.fullmatch(r"IT[A-Z]", code):
+        return "ripartizione"
+    if re.fullmatch(r"IT[A-Z][0-9A-Z]", code):
+        return "regione"
+    raise ValueError(f"Unknown territory code {code!r}: extend territory_level()")
 
 
 DATAFLOW_RE = re.compile(r"\(IT1,([^)]+)\)")
@@ -97,7 +123,12 @@ def parse(path: Path) -> tuple[str, list[str], list[list[str]]]:
     time_dim = obs_dims[0]
     time_values = [v.get("id", "") for v in time_dim["values"]]
 
-    header = [d["name"] for d in series_dims] + ["TIME_PERIOD", "VALUE", "OBS_STATUS"]
+    header: list[str] = []
+    for d in series_dims:
+        header.append(d["name"])
+        if d["id"] == TERRITORY_DIM:
+            header.extend(TERRITORY_EXTRA_COLUMNS)
+    header += ["TIME_PERIOD", "VALUE", "OBS_STATUS"]
     dataflow_id = extract_dataflow_id(path.name)
     rows: list[list[str]] = []
 
@@ -106,9 +137,13 @@ def parse(path: Path) -> tuple[str, list[str], list[list[str]]]:
         series_labels: list[str] = []
         for dim, idx_str in zip(series_dims, idx_parts):
             try:
-                series_labels.append(dim["values"][int(idx_str)].get("name", ""))
+                dim_value = dim["values"][int(idx_str)]
             except (ValueError, IndexError, KeyError):
-                series_labels.append("")
+                dim_value = {}
+            series_labels.append(dim_value.get("name", ""))
+            if dim["id"] == TERRITORY_DIM:
+                code = dim_value.get("id", "")
+                series_labels.extend([code, territory_level(code)])
 
         for time_idx_str, obs_value in series.get("observations", {}).items():
             try:
@@ -116,8 +151,7 @@ def parse(path: Path) -> tuple[str, list[str], list[list[str]]]:
             except (ValueError, IndexError):
                 time_label = ""
             value = obs_value[0] if obs_value else ""
-            status_code = obs_value[1] if len(obs_value) > 1 else None
-            status = obs_status_label(str(status_code) if status_code is not None else None, obs_attrs_spec)
+            status = obs_status_label(obs_value, obs_attrs_spec)
             rows.append(series_labels + [str(time_label), str(value) if value is not None else "", status])
 
     # Attach SOURCE dataflow id as the final column of every row.
